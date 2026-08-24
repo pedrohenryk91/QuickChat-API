@@ -71,7 +71,7 @@ public interface ChatApi {
             )
         )
     })
-    public ResponseEntity<ChatResponse> getChat(String id);
+    public ResponseEntity<ChatResponse> getChat(String id, JWTUserData currentUser);
 
     @Operation(
         summary = "Get all chats from a user",
@@ -93,7 +93,7 @@ public interface ChatApi {
             )
         )
     })
-    public ResponseEntity<Page<ChatResponse>> getChatsByUser(JWTUserData currentUser, Pageable pageable);
+    public ResponseEntity<Page<ChatResponse>> getChatsByUser(Pageable pageable, JWTUserData currentUser);
 
     @Operation(
         summary = "Get the messages from a chat",

@@ -43,21 +43,24 @@ public class ChatController implements ChatApi{
         @AuthenticationPrincipal JWTUserData currentUser
     ) {
         Chat chat = chatService.createDirectChat(currentUser.userId(), request.receiverUserId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ChatResponse(chat.getId(), chat.getCreatedAt(), chat.getUpdatedAt(), null));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ChatResponse(chat.getId(), chat.getUpdatedAt(), chat.getIconUrl(), chat.getName()));
     }
 
     @Override
     @GetMapping("/{id}")
-    public ResponseEntity<ChatResponse> getChat(@PathVariable("id") String id) {
-        Chat chat = chatService.getChatById(id);
-        return ResponseEntity.ok(new ChatResponse(chat.getId(), chat.getCreatedAt(), chat.getUpdatedAt(), chat.getName()));
+    public ResponseEntity<ChatResponse> getChat(
+        @PathVariable("id") String id,
+        @AuthenticationPrincipal JWTUserData currentUser
+    ) {
+        ChatResponse chat = chatService.getChatById(currentUser.userId(),id);
+        return ResponseEntity.ok(chat);
     }
 
     @Override
     @GetMapping("/user")
     public ResponseEntity<Page<ChatResponse>> getChatsByUser(
-        @AuthenticationPrincipal JWTUserData currentUser,
-        @PageableDefault(page = 0, size = 20, sort = "updatedAt", direction = Sort.Direction.DESC) @ParameterObject Pageable pageable
+        @PageableDefault(page = 0, size = 20, sort = "updatedAt", direction = Sort.Direction.DESC) @ParameterObject Pageable pageable,
+        @AuthenticationPrincipal JWTUserData currentUser
     ) {
         var chats = chatService.getChatsByUser(currentUser.userId(), pageable);
         return ResponseEntity.ok(chats);

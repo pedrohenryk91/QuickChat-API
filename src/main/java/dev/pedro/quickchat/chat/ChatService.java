@@ -37,15 +37,28 @@ public class ChatService {
         chat.setType(ChatType.DIRECT);
         chat.getMembers().add(userA);
         chat.getMembers().add(userB);
-    
-        return chatRepository.save(chat);
+
+        var response = chatRepository.save(chat);
+        response.setName(userB.getNickname());
+        response.setIconUrl(userB.getIconUrl());
+
+        return response;
     }
 
     @Transactional
-    public Chat getChatById(String id) {
+    public ChatResponse getChatById(String userId, String id) {
         try {
             Chat chat = chatRepository.getReferenceById(id);
-            return chat;
+            if(chat.getType().equals(ChatType.GROUP)) {
+                return new ChatResponse(chat.getId(), chat.getUpdatedAt(), chat.getIconUrl(), chat.getName());
+            }
+            var otherUser = chat.getMembers().stream()
+                    .filter(member -> !member.getId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+            String name = (otherUser != null) ? otherUser.getNickname() : chat.getName();
+            String iconUrl = (otherUser != null) ? otherUser.getIconUrl() : chat.getIconUrl();
+            return new ChatResponse(id, chat.getUpdatedAt(), iconUrl, name);
         } catch (Exception e) {
             throw new ChatNotFoundException(id);
         }
@@ -58,7 +71,19 @@ public class ChatService {
         var chats = chatRepository.findByMembersId(userId, pageable);
     
         Page<ChatResponse> responses = chats
-            .map(chat -> new ChatResponse(chat.getId(), chat.getCreatedAt(), chat.getUpdatedAt(), chat.getName()));
+            .map(chat -> {
+                if(chat.getType().equals(ChatType.GROUP)) {
+                    return new ChatResponse(chat.getId(), chat.getUpdatedAt(), chat.getIconUrl(), chat.getName());
+                }
+                var otherUser = chat.getMembers().stream()
+                        .filter(member -> !member.getId().equals(userId))
+                        .findFirst()
+                        .orElse(null);
+                String name = (otherUser != null) ? otherUser.getNickname() : chat.getName();
+                String iconUrl = (otherUser != null) ? otherUser.getIconUrl() : chat.getIconUrl();
+
+                return new ChatResponse(chat.getId(), chat.getUpdatedAt(), iconUrl, name);
+            });
 
         return responses;
     }
