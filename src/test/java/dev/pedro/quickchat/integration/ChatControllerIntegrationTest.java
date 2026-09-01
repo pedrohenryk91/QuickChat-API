@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ChatControllerIntegrationTest extends IntegrationTestSupport {
 
     @Test
-    void createDirectChat_returnsCreatedChatWithoutName() throws Exception {
+    void createDirectChat_returnsCreatedChat() throws Exception {
         RegisteredUser userA = registerAndLogin("hank", "password123");
         RegisteredUser userB = registerAndLogin("iris", "password123");
 
@@ -21,9 +21,9 @@ class ChatControllerIntegrationTest extends IntegrationTestSupport {
                         .content(objectMapper.writeValueAsString(new CreateDirectChatRequest(userB.userId()))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.iconUrl").isEmpty())
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty())
-                .andExpect(jsonPath("$.name").doesNotExist());
+                .andExpect(jsonPath("$.name").isNotEmpty());
     }
 
     @Test

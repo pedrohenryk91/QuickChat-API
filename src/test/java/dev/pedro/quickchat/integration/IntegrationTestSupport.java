@@ -10,11 +10,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.UUID;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -22,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@Testcontainers
 abstract class IntegrationTestSupport {
 
     @Autowired
@@ -39,9 +47,12 @@ abstract class IntegrationTestSupport {
         String username = uniqueUsername(usernamePrefix);
         CreateUserRequest createRequest = new CreateUserRequest(username, username + "-nick", password, null);
 
-        String createBody = mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createRequest)))
+        String createBody = mockMvc.perform(multipart("/user/create")
+                    .param("username", createRequest.username())
+                    .param("nickname", createRequest.nickname())
+                    .param("password", createRequest.password())
+                    .file("file", null)
+                )
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -60,4 +71,22 @@ abstract class IntegrationTestSupport {
     }
 
     protected record RegisteredUser(String userId, String username, String token) {}
+        
+    @Container
+    @SuppressWarnings("resource")
+    static GenericContainer<?> minioContainer = new GenericContainer<>(DockerImageName.parse("minio/minio:latest"))
+        .withCommand("server /data")
+        .withEnv("MINIO_ROOT_USER", "testadmin")
+        .withEnv("MINIO_ROOT_PASSWORD", "testadmin")
+        .withExposedPorts(9000);
+
+    @DynamicPropertySource
+    static void minioProperties(DynamicPropertyRegistry registry) {
+        String minioUrl = String.format("http://%s:%d", minioContainer.getHost(), minioContainer.getMappedPort(9000));
+
+        registry.add("MINIO_URL", () -> minioUrl);
+        registry.add("MINIO_ACCESS_KEY", () -> "testadmin");
+        registry.add("MINIO_ACCESS_SECRET", () -> "testadmin");
+    }
+
 }

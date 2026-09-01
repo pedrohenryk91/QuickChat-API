@@ -12,6 +12,7 @@ import dev.pedro.quickchat.auth.exception.FailedLoginException;
 import dev.pedro.quickchat.chat.exception.ChatAlreadyExistsException;
 import dev.pedro.quickchat.chat.exception.ChatNotFoundException;
 import dev.pedro.quickchat.shared.dto.ApiErrorResponse;
+import dev.pedro.quickchat.storage.exception.UploadFileException;
 import dev.pedro.quickchat.user.exception.UserAlreadyExistsException;
 import dev.pedro.quickchat.user.exception.UserIdNotFoundException;
 import dev.pedro.quickchat.user.exception.UsernameNotFoundException;
@@ -81,6 +82,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(UploadFileException.class)
+    public ResponseEntity<ApiErrorResponse> handleUploadFileException(UploadFileException ex, HttpServletRequest request) {
+        ApiErrorResponse error = ApiErrorResponse.simple(
+            HttpStatus.BAD_REQUEST.value(), 
+            ex.getMessage(), 
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(InternalAuthenticationServiceException.class)
     public ResponseEntity<ApiErrorResponse> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.simple(
@@ -124,6 +135,17 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiErrorResponse> internalServerError(RuntimeException ex, HttpServletRequest request) {
+        ApiErrorResponse error = ApiErrorResponse.simple(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+        System.err.println("Unhandled Exception: " + ex.getClass().getName());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     @ExceptionHandler(Exception.class)

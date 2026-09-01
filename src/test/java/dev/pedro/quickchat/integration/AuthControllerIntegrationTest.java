@@ -1,10 +1,10 @@
 package dev.pedro.quickchat.integration;
 
 import dev.pedro.quickchat.auth.dto.LoginRequest;
-import dev.pedro.quickchat.user.dto.CreateUserRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -15,10 +15,11 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
         String username = uniqueUsername("alice");
         String password = "supersecret";
 
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateUserRequest(username, "Alice", password, null))))
+        mockMvc.perform(multipart("/user/create")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .param("username", username)
+                        .param("nickname", "Alice")
+                        .param("password", password))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/auth/login")
@@ -49,10 +50,11 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
         String username = uniqueUsername("bob");
         String correctPassword = "correctPassword1";
 
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateUserRequest(username, "Bob", correctPassword, null))))
+        mockMvc.perform(multipart("/user/create")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .param("username", username)
+                        .param("nickname", "Bob")
+                        .param("password", correctPassword))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/auth/login")

@@ -1,10 +1,12 @@
 package dev.pedro.quickchat.user;
 
+import dev.pedro.quickchat.storage.StorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import dev.pedro.quickchat.user.dto.CreateUserRequest;
 import dev.pedro.quickchat.user.dto.UserResponse;
@@ -16,12 +18,14 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class UserService {
 
+    private final StorageService storageService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, StorageService storageService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.storageService = storageService;
     }
 
     @Transactional
@@ -74,12 +78,19 @@ public class UserService {
             throw new UserAlreadyExistsException(request.username());
         }
         String passwordHash = passwordEncoder.encode(request.password());
+        String iconUrl = "";
 
-        User user = new User(request.username(), request.nickname(), passwordHash, request.iconUrl());
+        MultipartFile file = request.file();
+
+        if(file != null && !file.isEmpty()) {
+            iconUrl = storageService.uploadFile("image-bucket",file);
+        }
+
+        User user = new User(request.username(), request.nickname(), passwordHash, iconUrl);
 
         userRepository.save(user);
 
-        return new UserResponse(request.username(), request.nickname(), request.iconUrl(), user.getId());
+        return new UserResponse(request.username(), request.nickname(), iconUrl, user.getId());
     }
 
 }

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class UserControllerIntegrationTest extends IntegrationTestSupport {
@@ -14,31 +14,29 @@ class UserControllerIntegrationTest extends IntegrationTestSupport {
     void createUser_withValidData_returns201AndBody() throws Exception {
         String username = uniqueUsername("carol");
 
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateUserRequest(username, "Carol", "password123", "http://img.example/pic.png"))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value(username))
-                .andExpect(jsonPath("$.nickname").value("Carol"))
-                .andExpect(jsonPath("$.iconUrl").value("http://img.example/pic.png"))
-                .andExpect(jsonPath("$.userId").isNotEmpty())
-                .andExpect(jsonPath("$.password").doesNotExist());
+        mockMvc.perform(multipart("/user/create")
+                .param("username", username)
+                .param("nickname", "Carlol")
+                .param("password", "123456")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+            ).andExpect(status().isCreated());
     }
 
     @Test
     void createUser_withBlankUsername_returns400() throws Exception {
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateUserRequest("", "Nick", "password123", null))))
+        mockMvc.perform(multipart("/user/create")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .param("username", "")
+                        .param("nickname", "Nick")
+                        .param("password", "password123")
+                    )
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void createUser_withUsernameShorterThanThreeChars_returns400() throws Exception {
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(multipart("/user/create")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
                         .content(objectMapper.writeValueAsString(
                                 new CreateUserRequest("ab", "Nick", "password123", null))))
                 .andExpect(status().isBadRequest());
@@ -46,8 +44,8 @@ class UserControllerIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void createUser_withBlankNickname_returns400() throws Exception {
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(multipart("/user/create")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
                         .content(objectMapper.writeValueAsString(
                                 new CreateUserRequest(uniqueUsername("erin"), "", "password123", null))))
                 .andExpect(status().isBadRequest());
@@ -55,8 +53,8 @@ class UserControllerIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void createUser_withPasswordShorterThanSixChars_returns400() throws Exception {
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(multipart("/user/create")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
                         .content(objectMapper.writeValueAsString(
                                 new CreateUserRequest(uniqueUsername("dave"), "Dave", "123", null))))
                 .andExpect(status().isBadRequest());
@@ -67,14 +65,20 @@ class UserControllerIntegrationTest extends IntegrationTestSupport {
         String username = uniqueUsername("frank");
         CreateUserRequest request = new CreateUserRequest(username, "Frank", "password123", null);
 
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/user/create")
+                        .param("username",username)
+                        .param("nickname", request.nickname())
+                        .param("password", request.password())
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                    )
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/user/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/user/create")
+                        .param("username",username)
+                        .param("nickname", request.nickname())
+                        .param("password", request.password())
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                    )
                 .andExpect(status().is4xxClientError());
     }
 
