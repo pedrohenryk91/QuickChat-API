@@ -1,4 +1,4 @@
-package dev.pedro.quickchat.chat.message;
+package dev.pedro.quickchat.message;
 
 import java.time.LocalDateTime;
 

@@ -20,5 +20,5 @@ public class AuthService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userService.findByUsernameOrThrow(username);
     }
-    
+
 }

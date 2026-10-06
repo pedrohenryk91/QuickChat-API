@@ -1,17 +1,22 @@
 package dev.pedro.quickchat.chat;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.pedro.quickchat.chat.dto.ChatPageResponse;
 import dev.pedro.quickchat.chat.dto.ChatResponse;
 import dev.pedro.quickchat.chat.dto.CreateDirectChatRequest;
-import dev.pedro.quickchat.chat.message.MessageService;
-import dev.pedro.quickchat.chat.message.dto.MessageResponse;
+import dev.pedro.quickchat.chat.dto.CreateGroupChatRequest;
+import dev.pedro.quickchat.message.MessageService;
+import dev.pedro.quickchat.message.dto.MessageResponse;
 import dev.pedro.quickchat.shared.dto.JWTUserData;
 import jakarta.validation.Valid;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -43,8 +48,32 @@ public class ChatController implements ChatApi{
         @AuthenticationPrincipal JWTUserData currentUser
     ) {
         Chat chat = chatService.createDirectChat(currentUser.userId(), request.receiverUserId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ChatResponse(chat.getId(), chat.getUpdatedAt(), chat.getIconUrl(), chat.getName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            new ChatResponse(
+                chat.getId(),
+                chat.getUpdatedAt(),
+                chat.getIconUrl(),
+                chat.getName(),
+                chat.getType().toString()
+            ));
     }
+
+    @PostMapping("/create/group")
+    public ResponseEntity<ChatResponse> createChatGroup(
+        @Valid @RequestBody CreateGroupChatRequest request,
+        @AuthenticationPrincipal JWTUserData currentUser
+    ) {
+        Chat chat = chatService.createGroupChat(request, currentUser.userId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            new ChatResponse(
+                chat.getId(), 
+                chat.getUpdatedAt(), 
+                chat.getIconUrl(), 
+                chat.getName(),
+                chat.getType().toString()
+            ));
+    }
+    
 
     @Override
     @GetMapping("/{id}")
@@ -52,27 +81,29 @@ public class ChatController implements ChatApi{
         @PathVariable("id") String id,
         @AuthenticationPrincipal JWTUserData currentUser
     ) {
-        ChatResponse chat = chatService.getChatById(currentUser.userId(),id);
+        ChatResponse chat = chatService.getChatByIdWithName(currentUser.userId(),id);
         return ResponseEntity.ok(chat);
     }
 
     @Override
     @GetMapping("/user")
-    public ResponseEntity<Page<ChatResponse>> getChatsByUser(
+    public ResponseEntity<ChatPageResponse> getChatsByUser(
+        @RequestParam(required = false) String cursor,
         @PageableDefault(page = 0, size = 20, sort = "updatedAt", direction = Sort.Direction.DESC) @ParameterObject Pageable pageable,
         @AuthenticationPrincipal JWTUserData currentUser
     ) {
-        var chats = chatService.getChatsByUser(currentUser.userId(), pageable);
+        var chats = chatService.getChatsByUser(currentUser.userId(), cursor, 50);
         return ResponseEntity.ok(chats);
     }
 
     @Override
     @GetMapping("/{chatId}/messages")
-    public ResponseEntity<Page<MessageResponse>> getChatMessages(
+    public ResponseEntity<List<MessageResponse>> getChatMessages(
         @PathVariable("chatId") String chatId,
-        @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @ParameterObject Pageable pageable
+        @RequestParam("beforeId") Optional<Long> beforeId,
+        @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.ASC) @ParameterObject Pageable pageable
     ) {
-        var msgs = messageService.getMessagesByChat(chatId, pageable);
+        var msgs = messageService.getMessagesByChat(chatId, beforeId, pageable);
         return ResponseEntity.ok(msgs);
     }
 }

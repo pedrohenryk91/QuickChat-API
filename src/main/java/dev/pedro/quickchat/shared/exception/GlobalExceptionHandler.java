@@ -16,6 +16,7 @@ import dev.pedro.quickchat.storage.exception.UploadFileException;
 import dev.pedro.quickchat.user.exception.UserAlreadyExistsException;
 import dev.pedro.quickchat.user.exception.UserIdNotFoundException;
 import dev.pedro.quickchat.user.exception.UsernameNotFoundException;
+import dev.pedro.quickchat.user.exception.UsersNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -34,6 +35,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserIdNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleUserNotFound(UserIdNotFoundException ex, HttpServletRequest request) {
+        ApiErrorResponse error = ApiErrorResponse.simple(
+            HttpStatus.NOT_FOUND.value(),
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(UsersNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUsersNotFound(UsersNotFoundException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.simple(
             HttpStatus.NOT_FOUND.value(),
             ex.getMessage(),

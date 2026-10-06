@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 import dev.pedro.quickchat.shared.dto.ApiErrorResponse;
+import dev.pedro.quickchat.shared.dto.JWTUserData;
 import dev.pedro.quickchat.user.dto.CreateUserRequest;
 import dev.pedro.quickchat.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 public interface UserApi {
+
+    public ResponseEntity<UserResponse> me(JWTUserData currentUser);
 
     @SecurityRequirement
     @Operation(
@@ -65,5 +68,12 @@ public interface UserApi {
             )
         )
     })
-    public Page<UserResponse> searchUsers(String query, Pageable pageable);
+    public ResponseEntity<Page<UserResponse>> searchUsers(String query, Pageable pageable);
+
+    @Operation(
+        summary = "Verifies if an username is already in use",
+        description = "Verifies if an username is already in use"
+    )
+    public ResponseEntity<Boolean> usernameAlreadyInUse(String query);
+
 }

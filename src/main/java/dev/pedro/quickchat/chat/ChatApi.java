@@ -1,12 +1,15 @@
 package dev.pedro.quickchat.chat;
 
-import org.springframework.data.domain.Page;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
+import dev.pedro.quickchat.chat.dto.ChatPageResponse;
 import dev.pedro.quickchat.chat.dto.ChatResponse;
 import dev.pedro.quickchat.chat.dto.CreateDirectChatRequest;
-import dev.pedro.quickchat.chat.message.dto.MessageResponse;
+import dev.pedro.quickchat.message.dto.MessageResponse;
 import dev.pedro.quickchat.shared.dto.ApiErrorResponse;
 import dev.pedro.quickchat.shared.dto.JWTUserData;
 import io.swagger.v3.oas.annotations.Operation;
@@ -93,7 +96,7 @@ public interface ChatApi {
             )
         )
     })
-    public ResponseEntity<Page<ChatResponse>> getChatsByUser(Pageable pageable, JWTUserData currentUser);
+    public ResponseEntity<ChatPageResponse> getChatsByUser(String cursor, Pageable pageable, JWTUserData currentUser);
 
     @Operation(
         summary = "Get the messages from a chat",
@@ -123,6 +126,6 @@ public interface ChatApi {
             )
         )
     })
-    public ResponseEntity<Page<MessageResponse>> getChatMessages(String chatId, Pageable pageable);
+    public ResponseEntity<List<MessageResponse>> getChatMessages(String chatId, Optional<Long> beforeId, Pageable pageable);
 
 }

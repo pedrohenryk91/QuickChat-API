@@ -1,6 +1,10 @@
 package dev.pedro.quickchat.user;
 
 import dev.pedro.quickchat.storage.StorageService;
+
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +17,6 @@ import dev.pedro.quickchat.user.dto.UserResponse;
 import dev.pedro.quickchat.user.exception.UserAlreadyExistsException;
 import dev.pedro.quickchat.user.exception.UserIdNotFoundException;
 import dev.pedro.quickchat.user.exception.UsernameNotFoundException;
-import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class UserService {
@@ -29,6 +32,11 @@ public class UserService {
     }
 
     @Transactional
+    public Boolean usernameInUse(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    @Transactional
     public Boolean validateExists(String id) throws UserIdNotFoundException {
         if (!userRepository.existsById(id)) {
             throw new UserIdNotFoundException(id);
@@ -36,38 +44,36 @@ public class UserService {
         return true;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public User findByIdOrThrow(String id) throws UserIdNotFoundException {
-        try {
-            return userRepository.getReferenceById(id);
-        }
-        catch (EntityNotFoundException e) {
-            throw new UserIdNotFoundException(id);
-        }
+        return userRepository.findById(id).orElseThrow(() -> new UserIdNotFoundException(id));
     }
 
     @Transactional
     public User findByUsernameOrThrow(String username) {
-        try {
-            return userRepository.findByUsername(username);
-        }
-        catch (Exception e) {
-            throw new UsernameNotFoundException(username);
-        }
+        return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> findAllById(Set<String> ids) {
+        return userRepository.findAllById(ids);
     }
 
     @Transactional(readOnly = true)
     public Page<UserResponse> search(String query, Pageable pageable) {
         if(query == null || query.isBlank()) {
-            return Page.empty(pageable);
+            return Page.empty();
         }
 
         String cleanedQuery = query.trim();
         var users = userRepository.searchWithUsernamePriority(cleanedQuery, pageable);
 
-        Page<UserResponse> response = users.map(
-            user -> new UserResponse(user.getUsername(), user.getNickname(), user.getIconUrl(), user.getId())
-        );
+        Page<UserResponse> response = users.map(user -> new UserResponse(
+            user.getUsername(),
+            user.getNickname(),
+            user.getIconUrl(),
+            user.getId()
+        ));
 
         return response;
     }

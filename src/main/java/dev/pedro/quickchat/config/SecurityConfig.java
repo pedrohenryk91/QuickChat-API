@@ -32,7 +32,7 @@ public class SecurityConfig {
 
     private String frontUrl;
 
-    public SecurityConfig(@Value("${FRONT_URL:http://localhost:7070}") String frontUrl,SecurityFilter securityFilter) {
+    public SecurityConfig(@Value("${FRONT_URL:http://localhost:5173}") String frontUrl,SecurityFilter securityFilter) {
         this.securityFilter = securityFilter;
         this.frontUrl = frontUrl;
     }
@@ -47,7 +47,10 @@ public class SecurityConfig {
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/user/create").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/user/check-username").permitAll()
                     .requestMatchers(SWAGGER_WHITELIST).permitAll()
+                    .requestMatchers("/ws/**").permitAll()
+                    .requestMatchers("/app/**").permitAll()
                     .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
@@ -57,7 +60,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(frontUrl));
+        configuration.setAllowedOrigins(List.of(frontUrl, "http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
